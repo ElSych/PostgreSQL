@@ -1393,3 +1393,344 @@ ORDER BY 1;
 ---
 
 </details>
+
+## Домашняя работа 10
+
+<details>
+<summary>Развернуть</summary>
+
+---
+
+Задания 12-18 учебного пособия "Администрирование информационных систем".
+
+#### Задание 12
+
+```sql
+SELECT * FROM personnel;
+ emp_nbr | emp_name |         address         | birth_date 
+---------+----------+-------------------------+------------
+       0 | вакансия |                         | 2014-05-19
+       1 | Иван     | ул. Любителей языка C   | 1962-12-01
+       2 | Петр     | ул. UNIX гуру           | 1965-10-21
+       3 | Антон    | ул. Ассемблерная        | 1964-04-17
+       4 | Захар    | ул. им. СУБД PostgreSQL | 1963-09-27
+       5 | Ирина    | просп. Программистов    | 1968-05-12
+       6 | Анна     | пер. Перловый           | 1969-03-20
+       7 | Андрей   | пл. Баз данных          | 1945-11-07
+       8 | Николай  | наб. ОС Linux           | 1944-12-01
+
+SELECT * FROM personnel_org_chart;
+ emp_nbr |   emp   | boss_emp_nbr | boss  
+---------+---------+--------------+-------
+       1 | Иван    |            ø | ø
+       2 | Петр    |            1 | Иван
+       3 | Антон   |            1 | Иван
+       4 | Захар   |            3 | Антон
+       5 | Ирина   |            3 | Антон
+       6 | Анна    |            3 | Антон
+       7 | Андрей  |            5 | Ирина
+       8 | Николай |            5 | Ирина
+
+SELECT * FROM create_paths;
+ level1 | level2 | level3 | level4  
+--------+--------+--------+---------
+ Иван   | Антон  | Ирина  | Андрей
+ Иван   | Антон  | Ирина  | Николай
+ Иван   | Петр   | ø      | ø
+ Иван   | Антон  | Захар  | ø
+ Иван   | Антон  | Анна   | ø
+
+SELECT * FROM org_chart;
+      job_title      | emp_nbr | boss_emp_nbr |  salary   
+---------------------+---------+--------------+-----------
+ Президент           |       1 |            ø | 1000.0000
+ Вице-президент 1    |       2 |            1 |  900.0000
+ Вице-президент 2    |       3 |            1 |  800.0000
+ Архитектор          |       4 |            3 |  700.0000
+ Ведущий программист |       5 |            3 |  600.0000
+ Программист C       |       6 |            3 |  500.0000
+ Программист Perl    |       7 |            5 |  450.0000
+ Оператор            |       8 |            5 |  400.0000
+```
+
+#### Задание 13
+
+Проверка структуры дерева на предмет отсутствия циклов.
+
+```sql
+UPDATE org_chart 
+  SET boss_emp_nbr = 4 WHERE emp_nbr = 3;
+
+SELECT * FROM tree_test();
+ tree_test 
+-----------
+ Cycles
+(1 row)
+
+UPDATE org_chart 
+SET boss_emp_nbr = 8 WHERE emp_nbr = 3;
+
+SELECT * FROM tree_test();
+ tree_test 
+-----------
+ Cycles
+(1 row)
+```
+
+#### Задание 14
+
+Обход дерева снизу вверх.
+
+```sql
+SELECT * FROM up_tree_traversal(6);
+ emp_nbr | boss_emp_nbr 
+---------+--------------
+       6 |            3
+       3 |            1
+       1 |            ø
+SELECT * FROM up_tree_traversal2(6)
+AS (emp int, boss int);
+ emp | boss 
+-----+------
+   6 |    3
+   3 |    1
+   1 |    ø
+SELECT * FROM up_tree_traversal (( select emp_nbr from personnel where emp_name = 'Захар' ));
+ emp_nbr | boss_emp_nbr 
+---------+--------------
+       4 |            3
+       3 |            1
+       1 |            ø
+```
+
+#### Задание 15
+
+Удаление поддерева
+
+```sql
+SELECT * FROM create_paths;
+ level1 | level2 | level3 | level4  
+--------+--------+--------+---------
+ Иван   | Антон  | Ирина  | Андрей
+ Иван   | Антон  | Ирина  | Николай
+ Иван   | Петр   | ø      | ø
+ Иван   | Антон  | Захар  | ø
+ Иван   | Антон  | Анна   | ø
+
+SELECT * FROM personnel_org_chart;
+ emp_nbr |   emp   | boss_emp_nbr | boss  
+---------+---------+--------------+-------
+       1 | Иван    |            ø | ø
+       2 | Петр    |            1 | Иван
+       3 | Антон   |            1 | Иван
+       4 | Захар   |            3 | Антон
+       5 | Ирина   |            3 | Антон
+       6 | Анна    |            3 | Антон
+       7 | Андрей  |            5 | Ирина
+       8 | Николай |            5 | Ирина
+
+SELECT * FROM delete_subtree(4);
+ delete_subtree 
+----------------
+ 
+(1 row)
+SELECT * FROM create_paths;
+ level1 | level2 | level3 | level4  
+--------+--------+--------+---------
+ Иван   | Антон  | Ирина  | Андрей
+ Иван   | Антон  | Ирина  | Николай
+ Иван   | Петр   | ø      | ø
+ Иван   | Антон  | Анна   | ø
+
+SELECT * FROM personnel_org_chart;
+ emp_nbr |   emp   | boss_emp_nbr | boss  
+---------+---------+--------------+-------
+       1 | Иван    |            ø | ø
+       2 | Петр    |            1 | Иван
+       3 | Антон   |            1 | Иван
+       5 | Ирина   |            3 | Антон
+       6 | Анна    |            3 | Антон
+       7 | Андрей  |            5 | Ирина
+       8 | Николай |            5 | Ирина
+
+SELECT * FROM delete_subtree(( select emp_nbr from personnel where emp_name = 'Анна' )); delete_subtree 
+----------------
+ 
+(1 row)
+SELECT * FROM create_paths;
+ level1 | level2 | level3 | level4  
+--------+--------+--------+---------
+ Иван   | Антон  | Ирина  | Андрей
+ Иван   | Антон  | Ирина  | Николай
+ Иван   | Петр   | ø      | ø
+ 
+SELECT * FROM personnel_org_chart;
+ emp_nbr |   emp   | boss_emp_nbr | boss  
+---------+---------+--------------+-------
+       1 | Иван    |            ø | ø
+       2 | Петр    |            1 | Иван
+       3 | Антон   |            1 | Иван
+       5 | Ирина   |            3 | Антон
+       7 | Андрей  |            5 | Ирина
+       8 | Николай |            5 | Ирина
+ 
+```
+
+#### Задание 16
+
+```sql
+SELECT * FROM delete_and_promote_subtree(( select emp_nbr from personnel where emp_name='Антон' ));
+ delete_and_promote_subtree 
+----------------------------
+ 
+(1 row)
+SELECT * FROM create_paths;
+ level1 | level2 | level3  | level4 
+--------+--------+---------+--------
+ Иван   | Петр   | ø       | ø
+ Иван   | Ирина  | Николай | ø
+ Иван   | Ирина  | Андрей  | ø
+ 
+SELECT * FROM personnel_org_chart;
+ emp_nbr |   emp   | boss_emp_nbr | boss  
+---------+---------+--------------+-------
+       1 | Иван    |            ø | ø
+       2 | Петр    |            1 | Иван
+       7 | Андрей  |            5 | Ирина
+       8 | Николай |            5 | Ирина
+       5 | Ирина   |            1 | Иван
+ 
+```
+
+#### Задание 17
+
+```sql
+CREATE VIEW create_paths_5 (level1, level2, level3, level4, level5) AS
+SELECT a1.emp AS e1, a2.emp AS e2, a3.emp AS e3, a4.emp AS e4, a5.emp AS e5
+FROM personnel_org_chart as a1
+  LEFT OUTER JOIN personnel_org_chart as a2
+               ON a1.emp = a2.boss
+  LEFT OUTER JOIN personnel_org_chart as a3
+               ON a2.emp = a3.boss
+  LEFT OUTER JOIN  personnel_org_chart AS a4
+               ON a3.emp = a4.boss
+  LEFT OUTER JOIN  personnel_org_chart as a5
+               ON a4.emp = a5.boss 
+  WHERE a1.emp = 'Иван';
+SELECT * FROM create_paths_5;
+ level1 | level2 | level3  | level4 | level5 
+--------+--------+---------+--------+--------
+ Иван   | Ирина  | Андрей  | ø      | ø
+ Иван   | Ирина  | Николай | ø      | ø
+ Иван   | Петр   | ø       | ø      | ø
+
+```
+
+#### Задание 18
+
+```sql
+ALTER TABLE personnel ADD COLUMN ne_goden text;
+
+CREATE OR replace FUNCTION pensia() 
+  RETURNS void AS $$
+DECLARE curs CURSOR
+  FOR SELECT * 
+  FROM personnel WHERE (cast(current_date as date)-cast(birth_date as date))/365 > 65;
+BEGIN
+  OPEN curs;
+  MOVE curs;
+  WHILE FOUND LOOP
+    UPDATE personnel
+    SET pensioneer='yes'
+    WHERE current of curs;
+    MOVE curs;
+  END loop;
+  CLOSE curs;
+END
+$$
+LANGUAGE plpgsql;
+CREATE FUNCTION
+
+SELECT * FROM pensia();
+ pensia 
+------
+ 
+(1 row)
+
+SELECT * FROM personnel;
+ emp_nbr | emp_name |         address         | birth_date | pensioneer 
+---------+----------+-------------------------+------------+----------
+       0 | вакансия |                         | 2014-05-19 | ø
+       1 | Иван     | ул. Любителей языка C   | 1962-12-01 | NULL
+       2 | Петр     | ул. UNIX гуру           | 1965-10-21 | NULL
+       3 | Антон    | ул. Ассемблерная        | 1964-04-17 | NULL
+       4 | Захар    | ул. им. СУБД PostgreSQL | 1963-09-27 | NULL
+       5 | Ирина    | просп. Программистов    | 1968-05-12 | NULL
+       6 | Анна     | пер. Перловый           | 1969-03-20 | NULL
+       7 | Андрей   | пл. Баз данных          | 1945-11-07 | yes
+       8 | Николай  | наб. ОС Linux           | 1944-12-01 | yes
+
+```
+
+[Наверх](#ссылки)
+
+---
+
+</details>
+
+## Домашняя работа 11
+
+<details>
+<summary>Развернуть</summary>
+
+---
+
+Задание выполняется на основе презентации 10 "Полнотекстовый поиск"
+и главы 12 документации на [Постгрес](https://postgrespro.ru/docs/postgresql/12/textsearch)
+
+Придумать и реализовать пример использования полнотекстового поиска,
+аналогичный (можно более простой или более сложный) тому примеру с библиотечным каталогом,
+который был приведен в презентации.
+Можно использовать исходные тексты, приведенные в [презентации](https://edu.postgrespro.ru/sqlprimer/sqlprimer-2019-msu-10.tgz).
+
+```sql
+CREATE TABLE books
+(book_id integer primary key, book_description text);
+\copy books from '/home/Downloads/books3.txt';
+
+ALTER TABLE books 
+ADD COLUMN ts_description tsvector;
+UPDATE books 
+  SET ts_description = to_tsvector('russian', book_description);
+```
+Найдём книги, связанные с МАИ
+```sql
+SELECT book_id, book_description FROM books WHERE ts_description @@ plainto_tsquery('МАИ');
+book_id  | book_description
+---------+----------------------------------------------------------------------------------------------------------------------------------------
+746	     | Ефимочкина, Евгения Петровна. Математические методы в экономике [Текст] : пособие по решению задач линейного программирования : для дневной и вечерней форм обучения / Е. П. Ефимочкина. - Москва : МАИ, 1975. - 79 с.
+747	     | Задачи линейного программирования [Текст] : (учебное пособие) : для дневной и вечерней форм обучения / Моск. авиац. ин-т им. С. Орджоникидзе. - Москва : МАИ, 1975. - 70, [3] с.
+748	     | Бунякин, Сергей Васильевич. Программирование и вычислительная математика при алгоритмизации процессов обработки информации [Текст] : для дневной и вечерней формы обучения. - Москва : МАИ, 1975 - . Ч. 1 : Метод Калмана-Бьюси. - 1975. - 87, [1] с.
+(33 rows)
+```
+Теперь книги про математический анализ
+```sql
+SELECT book_id, book_description FROM books WHERE ts_description @@ plainto_tsquery('Математический анализ');
+book_id  | book_description
+---------+----------------------------------------------------------------------------------------------------------------------------------------
+262      | Высшая математика для экономистов: сборник задач [Текст] : аналитическая геометрия, линейная алгебра, математический анализ, теория вероятностей, математическая статистика, линейное программирование : учебное пособие для студентов высших учебных заведений, обучающихся по направлению 38.03.01 "Экономика" и экономическим специальностям / [Г. И. Бобрик и др.]. - Москва : ИНФРА-М, 2015. - 537, [1] с.
+```
+Количество книг про питон
+```sql
+SELECT count(*) FROM books WHERE ts_description @@ to_tsquery('Python');
+ count 
+-------
+    4
+(1 row)
+```
+
+[Наверх](#ссылки)
+
+---
+
+</details>
