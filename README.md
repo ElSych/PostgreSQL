@@ -114,8 +114,7 @@ DELETE FROM aircrafts WHERE model = 'Kukuruznik';
 
 ## Домашняя работа 3
 
-<details>
-<summary>Сама работа</summary>
+<detailsРазвернуть</summary>
 
 ---
 
@@ -979,7 +978,7 @@ ON f.city <> a2.city;
 ## Домашняя работа 6
 
 <details>
-<summary>Сама работа</summary>
+<summary>Развернуть</summary>
 
 ---
 
@@ -1189,7 +1188,7 @@ WHERE fare_conditions = 'Economy';
 ## Домашняя работа 8
 
 <details>
-<summary>Сама работа</summary>
+<summary>Развернуть</summary>
 
 ---
 
