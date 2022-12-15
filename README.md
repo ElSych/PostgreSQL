@@ -114,7 +114,8 @@ DELETE FROM aircrafts WHERE model = 'Kukuruznik';
 
 ## Домашняя работа 3
 
-<details>Развернуть</summary>
+<details>
+<summary>Развернуть</summary>
 
 ---
 
