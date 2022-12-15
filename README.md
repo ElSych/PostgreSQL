@@ -1092,6 +1092,7 @@ RETURNING *;
 ---
 
 </details>
+
 ## Домашняя работа 7
 
 <details>
@@ -1184,6 +1185,7 @@ WHERE fare_conditions = 'Economy';
 ---
 
 </details>
+
 ## Домашняя работа 8
 
 <details>
