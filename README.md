@@ -18,8 +18,6 @@
 
 Попытаться сформулировать требования к будущей базе данных.
 
-### Работа
-
 #### Цель работы
 
 Описать словесно выбранную предметную область – "Риэлторская контора".
@@ -41,11 +39,7 @@
 
 ---
 
-### Задание
-
 Глава 3 (Задания 1-4)
-
-### Работа
 
 #### Задание 1
 
@@ -125,11 +119,7 @@ DELETE FROM aircrafts WHERE model = 'Kukuruznik';
 
 ---
 
-### Задание
-
 Глава 4 (Задания 2, 4, 8, 12, 15, 21, 30, 33, 35)
-
-### Работа
 
 #### Задание 2
 
@@ -467,11 +457,8 @@ SELECT json_build_object('ключ', 'значение', 'ещёключ', 'ещ
 
 ---
 
-### Задание
-
 Глава 5 (Задания 2, 9, 17, 18)
 
-### Работа
 
 #### Задание 2
 
@@ -628,18 +615,14 @@ SELECT * FROM bookings WHERE book_ref='000181';
 ---
 
 </details>
-## Домашняя работа 5
+### Домашняя работа 5
 
 <details>
 <summary>Развернуть</summary>
 
 ---
 
-### Задание
-
 Глава 6 (Задания 2, 7, 9, 13, 19, 21, 23)
-
-### Работа
 
 #### Задание 2
 
@@ -985,6 +968,423 @@ FROM city_from f
 JOIN ( SELECT DISTINCT city FROM airports ) AS a2
 ON f.city <> a2.city;
 ```
+
+[Наверх](#ссылки)
+
+---
+
+</details>
+
+## Домашняя работа 6
+
+<details>
+<summary>Сама работа</summary>
+
+---
+
+Глава 7 (упражнения 1, 2, 4)
+
+#### Задание 1
+
+Добавьте в определение таблицы aircrafts_log значение по умолчанию current_timestamp и соответствующим образом измените команды INSERT, приведенные в тексте главы.
+
+```sql
+CREATE TEMP TABLE aircrafts_log AS
+SELECT * FROM aircrafts WITH DATA;
+SELECT 9
+ALTER TABLE aircrafts_log
+ADD COLUMN log_timestamp TIMESTAMP DEFAULT (current_timestamp);
+
+WITH add_row AS( 
+    INSERT INTO aircrafts_tmp
+    SELECT * FROM aircrafts
+    RETURNING *
+)
+INSERT INTO aircrafts_log
+     SELECT 
+           add_row.aircraft_code, 
+           add_row.model, 
+           add_row.range
+      FROM add_row;
+
+SELECT * FROM aircrafts_log
+ aircraft_code |        model        | range |       log_timestamp
+---------------+---------------------+-------+----------------------------
+ 773           | Boeing 777-300      | 11100 | 2020-12-06 23:09:54.005097
+ 763           | Boeing 767-300      |  7900 | 2020-12-06 23:09:54.005097
+ 320           | Airbus A320-200     |  5700 | 2020-12-06 23:09:54.005097
+ 321           | Airbus A321-200     |  5600 | 2020-12-06 23:09:54.005097
+ 319           | Airbus A319-100     |  6700 | 2020-12-06 23:09:54.005097
+ 733           | Boeing 737-300      |  4200 | 2020-12-06 23:09:54.005097
+ CN1           | Cessna 208 Caravan  |  1200 | 2020-12-06 23:09:54.005097
+ CR2           | Bombardier CRJ-200  |  2700 | 2020-12-06 23:09:54.005097
+ SU9           | Sukhoi SuperJet-100 |  6000 | 2020-12-06 23:09:54.005097
+(9 строк)
+```
+
+#### Задание 2
+
+В предложении RETURNING можно указывать не только символ «∗», означающий выбор всех столбцов таблицы, но и более сложные выражения, сформированные на основе этих столбцов. В тексте главы мы копировали содержимое таблицы «Самолеты» в таблицу aircrafts_tmp, используя в предложении RETURNING именно «∗». Однако возможен и другой вариант запроса:
+
+```sql
+WITH add_row AS
+( INSERT INTO aircrafts_tmp
+SELECT * FROM aircrafts
+RETURNING aircraft_code, model, range,
+current_timestamp, 'INSERT'
+)
+INSERT INTO aircrafts_log
+SELECT ? FROM add_row;
+```
+
+Что нужно написать в этом запросе вместо вопросительного знака?
+
+- Можно написать для вывода модели add_row.model, для вывода дальности add_row.range, для вывода кода add_row.aircraft_code,   для времени current_timestamp, ну или звёздочку, чтобы вывести всё
+
+#### Задание 4
+
+В тексте главы в предложениях ON CONFLICT команды INSERT мы использовали только выражения, состоящие из имени одного столбца.
+Однако в таблице «Места» (seats) первичный ключ является составным и включает два столбца.
+Напишите команду INSERT для вставки новой строки в эту таблицу и предусмотрите возможный конфликт добавляемой строки со строкой, уже имеющейся в таблице.
+Сделайте два варианта предложения ON CONFLICT: первый — с использованием перечисления имен столбцов для проверки наличия дублирования, второй — с использованием предложения ON CONSTRAINT. Для того чтобы не изменить содержимое таблицы «Места», создайте ее копию и выполняйте все эти эксперименты с таблицей-копией.
+
+Сделаем такую же таблицу
+
+```sql
+CREATE TEMP TABLE seats_tmp
+AS SELECT * FROM SEATS;
+ALTER TABLE seats_tmp
+ADD PRIMARY KEY (aircraft_code, seat_no);
+```
+Вот она:
+```sql
+                                  Таблица "pg_temp_3.seats_tmp"
+     Столбец     |          Тип          | Правило сортировки | Допустимость NULL | По умолчанию
+-----------------+-----------------------+--------------------+-------------------+
+ aircraft_code   | character(3)          |                    | not null          |
+ seat_no         | character varying(4)  |                    | not null          |
+ fare_conditions | character varying(10) |                    |                   |
+Индексы:
+    "seats_tmp_pkey" PRIMARY KEY, btree (aircraft_code, seat_no)
+
+INSERT INTO seats_tmp
+SELECT aircraft_code, seat_no, fare_conditions
+FROM seats ON CONFLICT DO NOTHING;
+
+INSERT INTO seats_tmp
+VALUES ( 319, '2A', 'Business' )
+ON CONFLICT ON CONSTRAINT seats_tmp_pkey
+DO UPDATE SET aircraft_code = excluded.aircraft_code,
+seat_no = excluded.seat_no
+RETURNING *;
+```
+
+```sql
+ aircraft_code | seat_no | fare_conditions
+---------------+---------+-----------------
+ 319           | 2A      | Business
+(1 строка)
+```
+
+[Наверх](#ссылки)
+
+---
+
+</details>
+## Домашняя работа 7
+
+<details>
+<summary>Развернуть</summary>
+
+---
+
+Глава 8 (упражнения 1, 3)
+
+#### Задание 1
+
+Предположим, что для какой-то таблицы создан уникальный индекс по двум столбцам: column1 и column2. В таблице есть строка, у которой значение атрибута column1 равно ABC, а значение атрибута column2 - NULL. Мы решили добавить в таблицу еще одну строку с такими же значениями ключевых атрибутов, т.е. column1 - ABC, а column2 - NULL.
+
+Как вы думаете, будет ли операция вставки новой строки успешной или завершится с ошибкой? Объясните ваше решение.
+
+Завершится с ошибкой, NULL не будут распознаны как соответствующие каким либо существующим значениям.
+
+#### Задание 3
+
+Обратимся к таблице «Перелеты» (ticket_flights). В ней имеется столбец «Класс обслуживания» (fare_conditions), который отличается от остальных тем, что в нем могут присутствовать лишь три различных значения: Comfort, Business и Economy. 
+
+Выполните запросы, подсчитывающие количество строк, в которых атрибут fare_conditions принимает одно из трех возможных значений. Каждый из запросов выполните три-четыре раза, поскольку время может немного изменяться, и подсчитайте среднее время.
+
+```sql
+SELECT count( * )
+FROM ticket_flights
+WHERE fare_conditions = 'Comfort';
+17291 строка, время выполнения:
+1.	50 мс
+2.	44 мс
+3.	44 мс
+4.	47 мс
+
+SELECT count( * )
+FROM ticket_flights
+WHERE fare_conditions = 'Business';
+107642 строки, время выполнения:
+1.	49 мс
+2.	45 мс
+3.	54 мс
+4.	52 мс
+
+SELECT count( * )
+FROM ticket_flights
+WHERE fare_conditions = 'Economy';
+920793 строк, время выполнения:
+1.	52 мс
+2.	43 мс
+3.	49 мс
+4.	50 мс
+```
+
+Проделайте те же эксперименты с таблицей ticket_flights. Будет ли различаться среднее время выполнения запросов для различных значений атрибута fare_conditions? Почему это имеет место?
+
+Сделаем индекс к полю fare_conditions.
+
+```sql
+SELECT count( * )
+FROM ticket_flights
+WHERE fare_conditions = 'Comfort';
+17291 строка, время выполнения:
+1.	2 мс
+2.	1 мс
+3.	1 мс
+4.	2 мс
+
+SELECT count( * )
+FROM ticket_flights
+WHERE fare_conditions = 'Business';
+107642 строки, время выполнения:
+1.	2 мс
+2.	4 мс
+3.	3 мс
+4.	2 мс
+
+SELECT count( * )
+FROM ticket_flights
+WHERE fare_conditions = 'Economy';
+920793 строк, время выполнения:
+1.	40 мс
+2.	42 мс
+3.	45 мс
+4.	41 мс
+```
+
+Время для выборки Comfort и Business при добавлении индекса значительно сократилось, но время для Economy практически не изменилось. Это может быть связано с тем, что строк Economy больше, чем других строк, и индекс имеет преимущество только при выборе небольшой части от общего числа строк в таблице.
+
+[Наверх](#ссылки)
+
+---
+
+</details>
+## Домашняя работа 8
+
+<details>
+<summary>Сама работа</summary>
+
+---
+
+Глава 9 (упражнения 2, 3)
+
+#### Задание 2
+
+Модифицируйте сценарий выполнения транзакций: в первой транзакции вместо фиксации изменений выполните их отмену с помощью команды ROLLBACK и посмотрите, будет ли удалена строка и какая конкретно.
+
+```sql
+DELETE FROM aircrafts_tmp WHERE range < 2000;
+SELECT * FROM aircrafts_tmp;
+
+DELETE 
+   FROM aircrafts_tmp
+   WHERE range < 2000;
+SELECT * FROM aircrafts_tmp;
+ aircraft_code |        model        | range
+---------------+---------------------+-------
+ 773           | Boeing 777-300      | 11100
+ 763           | Boeing 767-300      |  7900
+ SU9           | Sukhoi SuperJet-100 |  3000
+ 320           | Airbus A320-200     |  5700
+ 321           | Airbus A321-200     |  5600
+ 319           | Airbus A319-100     |  6700
+ 733           | Boeing 737-300      |  4200
+ CR2           | Bombardier CRJ-200  |  2700
+ 773           | Boeing 777-300      | 11100
+ 763           | Boeing 767-300      |  7900
+ 320           | Airbus A320-200     |  5700
+ 321           | Airbus A321-200     |  5600
+ 319           | Airbus A319-100     |  6700
+ 733           | Boeing 737-300      |  4200
+ CR2           | Bombardier CRJ-200  |  2700
+ SU9           | Sukhoi SuperJet-100 |  6000
+(16 строк)
+```
+
+Измененияпервой транзакции не сохранились, и вторая транзакция произошла независимо от первой. Из-за чего удалилась строка, подходящая условию, которая была в изначальном состоянии таблицы. 
+
+#### Задание 3
+
+Когда говорят о таком феномене, как потерянное обновление, то зачастую в качестве примера приводится операция UPDATE, в которой значение какого-то атрибута изменяется с применением одного из действий арифметики. Например: 
+
+```sql
+UPDATE aircrafts_tmp SET range = range + 200 WHERE aircraft_code = 'CR2';
+```
+
+При выполнении двух и более подобных обновлений в рамках параллельных транзакций, использующих, например, уровень изоляции Read Committed, будут учтены все такие изменения (что и было показано в тексте главы). Очевидно, что потерянного обновления не происходит. Предположим, что в одной транзакции будет просто присваиваться новое значение.
+
+Очевидно, что сохранится только одно из значений атрибута range. Можно ли говорить, что в такой ситуации имеет место потерянное обновление? Если оно имеет место, то что можно предпринять для его недопущения? Обоснуйте ваш ответ.
+
+- С пользовательской стороны, потерянные обновления происходят, хотя то, что происходит на самом деле, эквивалентно последовательным транзакциям. Чтобы избежать потерь, можно использовать более высокий уровень изоляции.
+
+[Наверх](#ссылки)
+
+---
+
+</details>
+
+## Домашняя работа 9
+
+<details>
+<summary>Развернуть</summary>
+
+---
+Глава 10 (упражнения 3, 6, 8)
+
+#### Задание 3
+
+Самостоятельно выполните команду EXPLAIN для запроса, содержащего общее табличное выражение (CTE). Посмотрите, на каком уровне находится узел плана, отвечающий за это выражение, как он оформляется. Учтите, что общие табличные выражения всегда материализуются, т. е. вычисляются однократно и результат их вычисления сохраняется в памяти, а затем все последующие обращения в рамках запроса направляются уже к этому материализованному результату.
+
+```sql
+EXPLAIN WITH a AS
+(SELECT DISTINCT city FROM airports)
+SELECT count(*) 
+  FROM a AS a1 
+  JOIN a AS a2 
+  ON a1.city<>a2.city;
+```
+Результат:
+```sql
+                               QUERY PLAN
+-------------------------------------------------------------------------
+ Aggregate  (cost=262.11..262.12 rows=1 width=8)
+   CTE a
+     ->  HashAggregate  (cost=3.30..4.31 rows=101 width=17)
+           Group Key: airports.city
+           ->  Seq Scan on airports  (cost=0.00..3.04 rows=104 width=17)
+   ->  Nested Loop  (cost=0.00..232.55 rows=10100 width=0)
+         Join Filter: (a1.city <> a2.city)
+         ->  CTE Scan on a a1  (cost=0.00..2.02 rows=101 width=32)
+         ->  CTE Scan on a a2  (cost=0.00..2.02 rows=101 width=32)
+(9 строк)
+```
+
+#### Задание 6
+
+Выполните команду EXPLAIN для запроса, в котором использована какая-нибудь из оконных функций. Найдите в плане выполнения запроса узел с именем WindowAgg. Попробуйте объяснить, почему он занимает именно этот уровень в плане.
+
+```sql
+EXPLAIN
+SELECT book_ref, total_amount, avg(total_amount) OVER()
+FROM bookings
+ORDER BY 1
+LIMIT 10;
+```
+Результат:
+```sql
+                                            QUERY PLAN
+---------------------------------------------------------------------------------------------------
+ Limit  (cost=0.42..0.87 rows=10 width=45)
+   ->  WindowAgg  (cost=0.42..11796.09 rows=262788 width=45)
+         ->  Index Scan using bookings_pkey on bookings  (cost=0.42..8511.24 rows=262788 width=13)
+(3 строки)
+```
+
+#### Задание 8
+
+Замена коррелированного подзапроса соединением таблиц является одним из способов повышения производительности. Предположим, что мы задались вопросом: сколько маршрутов обслуживают самолеты каждого типа? При этом нужно учитывать, что может иметь место такая ситуация, когда самолеты какого-либо типа не обслуживают ни одного маршрута. Поэтому необходимо использовать не только представление «Маршруты» (routes), но и таблицу «Самолеты» (aircrafts). Это первый вариант запроса, в нем используется коррелированный подзапрос. 
+
+```sql
+EXPLAIN ANALYZE 
+SELECT f.flight_id, avg(tf.amount)
+FROM flights_v f
+LEFT OUTER JOIN ticket_flights tf ON f.flight_id = tf.flight_id
+WHERE f.flight_id<100
+GROUP BY 1
+ORDER BY 1;
+```
+Результат:
+```sql
+                                                                           QUERY PLAN
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=22132.61..22156.80 rows=97 width=36) (actual time=213.767..214.664 rows=99 loops=1)
+   Group Key: f.flight_id
+   ->  Sort  (cost=22132.61..22140.27 rows=3063 width=10) (actual time=213.734..213.912 rows=3988 loops=1)
+         Sort Key: f.flight_id
+         Sort Method: quicksort  Memory: 283kB
+         ->  Hash Join  (cost=20.88..21955.25 rows=3063 width=10) (actual time=1.362..212.614 rows=3988 loops=1)
+               Hash Cond: (f.arrival_airport = arr.airport_code)
+               ->  Hash Join  (cost=16.54..21942.55 rows=3063 width=14) (actual time=1.303..211.537 rows=3988 loops=1)
+                     Hash Cond: (f.departure_airport = dep.airport_code)
+                     ->  Hash Right Join  (cost=12.20..21929.85 rows=3063 width=18) (actual time=1.257..210.285 rows=3988 loops=1)
+                           Hash Cond: (tf.flight_id = f.flight_id)
+                           ->  Seq Scan on ticket_flights tf  (cost=0.00..19172.26 rows=1045726 width=10) (actual time=0.045..109.140 rows=1045726 loops=1)
+                           ->  Hash  (cost=10.99..10.99 rows=97 width=12) (actual time=0.061..0.062 rows=99 loops=1)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 13kB
+                                 ->  Index Scan using flights_pkey on flights f  (cost=0.29..10.99 rows=97 width=12) (actual time=0.012..0.041 rows=99 loops=1)
+                                       Index Cond: (flight_id < 100)
+                     ->  Hash  (cost=3.04..3.04 rows=104 width=4) (actual time=0.037..0.038 rows=104 loops=1)
+                           Buckets: 1024  Batches: 1  Memory Usage: 12kB
+                           ->  Seq Scan on airports dep  (cost=0.00..3.04 rows=104 width=4) (actual time=0.006..0.017 rows=104 loops=1)
+               ->  Hash  (cost=3.04..3.04 rows=104 width=4) (actual time=0.050..0.051 rows=104 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 12kB
+                     ->  Seq Scan on airports arr  (cost=0.00..3.04 rows=104 width=4) (actual time=0.013..0.026 rows=104 loops=1)
+ Planning Time: 1.548 ms
+ Execution Time: 214.862 ms
+(24 строки)
+```
+
+А в этом варианте коррелированный подзапрос раскрыт и заменен внешним соединением:
+
+```sql
+EXPLAIN ANALYZE
+SELECT f.flight_id, (SELECT avg(tf.amount)
+FROM ticket_flights tf
+WHERE f.flight_id = tf.flight_id)
+FROM flights_v f WHERE f.flight_id<100
+GROUP BY 1
+ORDER BY 1;
+                                                                     QUERY PLAN
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Group  (cost=0.57..2113389.87 rows=97 width=36) (actual time=122.058..12766.754 rows=99 loops=1)
+   Group Key: f.flight_id
+   ->  Nested Loop  (cost=0.57..73.67 rows=97 width=4) (actual time=0.056..3.468 rows=99 loops=1)
+         ->  Nested Loop  (cost=0.43..42.33 rows=97 width=8) (actual time=0.046..2.753 rows=99 loops=1)
+               ->  Index Scan using flights_pkey on flights f  (cost=0.29..10.99 rows=97 width=12) (actual time=0.011..0.385 rows=99 loops=1)
+                     Index Cond: (flight_id < 100)
+               ->  Index Only Scan using airports_pkey on airports dep  (cost=0.14..0.32 rows=1 width=4) (actual time=0.018..0.018 rows=1 loops=99)
+                     Index Cond: (airport_code = f.departure_airport)
+                     Heap Fetches: 99
+         ->  Index Only Scan using airports_pkey on airports arr  (cost=0.14..0.32 rows=1 width=4) (actual time=0.005..0.005 rows=1 loops=99)
+               Index Cond: (airport_code = f.arrival_airport)
+               Heap Fetches: 99
+   SubPlan 1
+     ->  Aggregate  (cost=21786.75..21786.76 rows=1 width=32) (actual time=128.915..128.915 rows=1 loops=99)
+           ->  Seq Scan on ticket_flights tf  (cost=0.00..21786.58 rows=70 width=6) (actual time=99.973..128.884 rows=40 loops=99)
+                 Filter: (f.flight_id = flight_id)
+                 Rows Removed by Filter: 1045686
+ Planning Time: 1.167 ms
+ Execution Time: 12810.241 ms
+(19 строк)
+```
+
+Исследуйте планы выполнения обоих запросов. Попытайтесь найти объяснение различиям в эффективности их выполнения. Чтобы получить усредненную картину, выполните каждый запрос несколько раз. 
+
+Из планов выполнения запросов видно, что операция JOIN выполняется значительно быстрее, чем подзапрос
 
 [Наверх](#ссылки)
 
